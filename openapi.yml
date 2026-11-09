@@ -1,0 +1,301 @@
+openapi: 3.0.3
+
+info:
+  title: Notification Manager API
+  version: 1.0.0
+  description: |
+    API for managing service notifications. Supports creating, reading, and advancing the
+    status of notifications, plus a Server-Sent Events stream for live updates.
+
+servers:
+  - url: http://localhost:8080
+    description: Local mock server
+
+paths:
+
+  /api/notifications:
+    get:
+      summary: List notifications (paginated)
+      operationId: listNotifications
+      parameters:
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            $ref: '#/components/schemas/NotificationStatus'
+        - name: severity
+          in: query
+          description: Filter by severity
+          schema:
+            $ref: '#/components/schemas/NotificationSeverity'
+        - name: page
+          in: query
+          description: Zero-based page index
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Page size
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Paginated list of notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+
+    post:
+      summary: Create a notification
+      operationId: createNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationRequest'
+            example:
+              title: "High CPU usage on eu-west-1"
+              description: "CPU above 90% for 5 minutes"
+              severity: "HIGH"
+      responses:
+        '201':
+          description: Notification created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "title is required"
+
+  /api/notifications/stream:
+    get:
+      summary: Live notification updates via Server-Sent Events
+      operationId: streamNotifications
+      description: |
+        Establishes an SSE connection. The server pushes events whenever a notification is
+        created or updated - both from the UI and from the automated monitoring system.
+
+        **Event types**
+
+        | Event | When |
+        |---|---|
+        | `notification_created` | A new notification was added |
+        | `notification_updated` | An existing notification changed status |
+
+        Both carry the full `Notification` object as JSON in the `data` field.
+
+        **Wire format**
+        ```
+        event: notification_created
+        data: {"id":"3fa85f64-...","title":"...","severity":"HIGH","status":"OPEN",...}
+
+        event: notification_updated
+        data: {"id":"3fa85f64-...","title":"...","severity":"HIGH","status":"IN_PROGRESS",...}
+        ```
+
+        A keep-alive comment (`: heartbeat`) is sent every 20 seconds.
+
+        **Client-side example**
+        ```js
+        const es = new EventSource('http://localhost:8080/api/notifications/stream')
+
+        es.addEventListener('notification_created', e => {
+          const notification = JSON.parse(e.data)
+          // add to your local state
+        })
+
+        es.addEventListener('notification_updated', e => {
+          const notification = JSON.parse(e.data)
+          // update in your local state
+        })
+
+        es.onerror = () => { /* handle reconnect */ }
+        ```
+      responses:
+        '200':
+          description: SSE stream (text/event-stream)
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/notifications/{id}:
+    get:
+      summary: Get a single notification by ID
+      operationId: getNotification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/notifications/{id}/status:
+    patch:
+      summary: Advance notification status
+      operationId: updateNotificationStatus
+      description: |
+        Moves the notification to the next status in the chain: `OPEN → IN_PROGRESS → RESOLVED`.
+        Transitions are one-way. Skipping a step or going backwards is rejected with 422.
+        Resolving a notification requires a non-empty `resolutionNote`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusRequest'
+      responses:
+        '200':
+          description: Status updated - returns the updated notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                already-resolved:
+                  summary: Notification is already resolved
+                  value:
+                    message: "a resolved notification cannot be modified"
+                wrong-target-status:
+                  summary: Tried to skip or reverse a step
+                  value:
+                    message: "cannot transition from OPEN to RESOLVED - expected: IN_PROGRESS"
+                resolution-note-missing:
+                  summary: Resolving without a note
+                  value:
+                    message: "a resolution note is required when resolving a notification"
+
+components:
+  schemas:
+
+    NotificationStatus:
+      type: string
+      enum: [OPEN, IN_PROGRESS, RESOLVED]
+      description: Transitions are one-way - OPEN → IN_PROGRESS → RESOLVED
+
+    NotificationSeverity:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+
+    Notification:
+      type: object
+      required: [id, title, severity, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        severity:
+          $ref: '#/components/schemas/NotificationSeverity'
+        status:
+          $ref: '#/components/schemas/NotificationStatus'
+        resolutionNote:
+          type: string
+          nullable: true
+          description: Populated only when status is RESOLVED
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotificationPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+        page:
+          type: integer
+          description: Current zero-based page index
+        size:
+          type: integer
+          description: Requested page size
+        totalElements:
+          type: integer
+          description: Total number of notifications matching the filter
+        totalPages:
+          type: integer
+          description: Total number of pages
+
+    CreateNotificationRequest:
+      type: object
+      required: [title, severity]
+      properties:
+        title:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        severity:
+          $ref: '#/components/schemas/NotificationSeverity'
+
+    UpdateStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/NotificationStatus'
+        resolutionNote:
+          type: string
+          nullable: true
+          description: Required when status is RESOLVED
+
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
