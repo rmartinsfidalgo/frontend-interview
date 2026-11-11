@@ -1,7 +1,14 @@
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import NotificationsContext from "./notifications-context";
 import {
   listNotifications,
+  type ListNotificationsResponse,
   type Notification,
   type NotificationSeverity,
   type NotificationStatus,
@@ -11,32 +18,65 @@ type NotificationsProviderProps = {
   children: ReactNode;
   // [Todo] Add more props to control initial states of the app
 };
+type MetaDataType = Omit<ListNotificationsResponse, "content">;
 export default function NotificationProvider({
   children,
 }: NotificationsProviderProps) {
+  const [metadata, setMetadata] = useState<MetaDataType | undefined>();
   const [notifications, setNotifications] = useState<
     Notification[] | undefined
   >();
-  const [status, setStatus] = useState<NotificationStatus | undefined>("OPEN");
-  const [severity, setSeveriity] = useState<NotificationSeverity | undefined>(
-    "CRITICAL",
+  const [status, setStatus] = useState<NotificationStatus | undefined>(
+    undefined,
   );
-  const initNotifications = async () => {
-    const response = await listNotifications({
-      query: { status, severity, page: 0 },
-    });
-    if (response.data) {
-      const { content } = response.data;
-      setNotifications(content);
-    } else {
-      // [Todo] We need to handle this error in a proper way
-      throw new Error("SOMETHING WENT WRONG");
+  const [severity, setSeveriity] = useState<NotificationSeverity | undefined>(
+    undefined,
+  );
+
+  const isFetchingRef = useRef(false);
+
+  const onRequestNextPage = useCallback(async () => {
+    if (!metadata || isFetchingRef.current) return;
+    if (metadata.page + 1 >= metadata.totalPages) return; // no more pages
+    isFetchingRef.current = true;
+    try {
+      const response = await listNotifications({
+        query: { severity, status, page: metadata.page + 1 },
+      });
+      if (response.data) {
+        const { content, ...meta } = response.data;
+        setMetadata(meta);
+        setNotifications((prev) => [...(prev ?? []), ...content]);
+      }
+    } finally {
+      isFetchingRef.current = false;
     }
-  };
+  }, [metadata, severity, status]);
+
   useEffect(() => {
-    console.log("here");
-    initNotifications();
-  }, []);
+    const initNotifications = async (
+      updatedSeverity: NotificationSeverity | undefined,
+      updatedStatus: NotificationStatus | undefined,
+    ) => {
+      // Reset The current States
+      setNotifications(undefined);
+      setMetadata(undefined);
+      // Get Response
+      const response = await listNotifications({
+        query: { severity: updatedSeverity, status: updatedStatus },
+      });
+      if (response.data) {
+        // Set New States
+        const { content, ...meta } = response.data;
+        setMetadata(meta);
+        setNotifications(content);
+      } else {
+        // [Todo] We need to handle this error in a proper way
+        throw new Error("SOMETHING WENT WRONG");
+      }
+    };
+    initNotifications(severity, status);
+  }, [severity, status]);
 
   return (
     <NotificationsContext.Provider
@@ -47,6 +87,9 @@ export default function NotificationProvider({
         setSeveriity,
         status,
         setStatus,
+        metadata,
+        setMetadata,
+        onRequestNextPage,
       }}
     >
       {children}

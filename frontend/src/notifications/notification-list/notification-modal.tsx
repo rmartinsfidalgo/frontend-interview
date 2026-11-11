@@ -135,7 +135,7 @@ export default function NotificationModal({ id, onClose }: NotificationModal) {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Field
                       label="Updated at"
-                      value={isoToLocalDateTime(detail.createdAt)}
+                      value={isoToLocalDateTime(detail.updatedAt)}
                     />{" "}
                   </Grid>
                 </Grid>

@@ -13,17 +13,23 @@ export default function SeverityInput() {
   const { severity, setSeveriity } = useNotifications();
   return (
     <FormControl fullWidth>
-      <InputLabel id="demo-simple-select-label">Severity</InputLabel>
+      <InputLabel id="severity-select-label">Severity</InputLabel>
       <Select
-        labelId="demo-simple-select-label"
-        id="demo-simple-select"
+        labelId="severity-select-label"
+        id="severity-select"
         label="Severity"
-        value={severity}
-        onChange={(e) => setSeveriity(e.target.value || undefined)}
+        value={severity ?? ""}
+        onChange={(e) =>
+          setSeveriity(
+            (e.target.value || undefined) as NotificationSeverity | undefined,
+          )
+        }
       >
-        <MenuItem>-</MenuItem>
+        <MenuItem value="">-</MenuItem>
         {severityOptions.map((s) => (
-          <MenuItem value={s}>{s.toLowerCase()}</MenuItem>
+          <MenuItem key={s} value={s}>
+            {s.toLowerCase()}
+          </MenuItem>
         ))}
       </Select>
     </FormControl>

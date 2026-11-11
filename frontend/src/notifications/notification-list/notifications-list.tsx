@@ -11,19 +11,26 @@ export default function NotificationList() {
   const [selectedNotificationId, setSelectedNotificationId] = useState<
     string | undefined
   >();
-  const { notifications } = useNotifications();
+  const { notifications, metadata, onRequestNextPage } = useNotifications();
   const { palette } = useTheme();
 
   return (
     <Stack sx={{ flex: 1 }}>
       <TableVirtuoso
         data={notifications}
+        rangeChanged={({ endIndex }) => {
+          const total = notifications?.length ?? 0;
+          if (total > 0 && endIndex >= Math.floor(total * 0.8)) {
+            onRequestNextPage();
+          }
+        }}
         components={NotificationTableComponent}
         fixedHeaderContent={() => (
           <TableRow sx={{ bgcolor: palette.background.paper }}>
-            <TableCell>Name</TableCell>
-            <TableCell>Date</TableCell>
+            <TableCell>Title ({metadata?.totalElements})</TableCell>
+            <TableCell>Severity</TableCell>
             <TableCell>Status</TableCell>
+            <TableCell>Date</TableCell>
             <TableCell>Action</TableCell>
           </TableRow>
         )}

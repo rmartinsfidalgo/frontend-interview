@@ -1,8 +1,10 @@
 import { Grid } from "@mui/material";
 import SeverityInput from "./severity-input";
 import StatusInput from "./status-input";
+import { useNotifications } from "@notifications/notifications-service";
 
 export default function NotificationsToolbar() {
+  const { status, setStatus } = useNotifications();
   return (
     <Grid
       sx={{
@@ -19,7 +21,7 @@ export default function NotificationsToolbar() {
           <SeverityInput />
         </Grid>
         <Grid size={4}>
-          <StatusInput />
+          <StatusInput clearable status={status} setStatus={setStatus} />
         </Grid>
       </Grid>
     </Grid>

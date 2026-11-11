@@ -1,26 +1,46 @@
 import type { NotificationStatus } from "@apis";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
-import useNotifications from "../notifications-service/use-notifications";
 
 const statusOptions: NotificationStatus[] = ["IN_PROGRESS", "OPEN", "RESOLVED"];
-type StatusInputProps = {
-  status: NotificationStatus;
-  setStatus: (status: NotificationStatus) => void;
-};
-export default function StatusInput({ status, setStatus }: StatusInputProps) {
+
+// `clearable` adds a "-" option that resets the value to `undefined` (used for filters).
+// Without it, a status must always be selected (e.g. editing a notification).
+type StatusInputProps =
+  | {
+      clearable: true;
+      status: NotificationStatus | undefined;
+      setStatus: (status: NotificationStatus | undefined) => void;
+    }
+  | {
+      clearable?: false;
+      status: NotificationStatus | undefined;
+      setStatus: (status: NotificationStatus) => void;
+    };
+
+export default function StatusInput(props: StatusInputProps) {
+  const { status } = props;
   return (
     <FormControl fullWidth>
-      <InputLabel id="demo-simple-select-label">Status</InputLabel>
+      <InputLabel id="status-select-label">Status</InputLabel>
       <Select
-        labelId="demo-simple-select-label"
-        id="demo-simple-select"
-        label="status"
-        value={status}
-        onChange={(e) => setStatus(e.target.value || undefined)}
+        labelId="status-select-label"
+        id="status-select"
+        label="Status"
+        value={status ?? ""}
+        onChange={(e) => {
+          const value = e.target.value as NotificationStatus | "";
+          if (props.clearable) {
+            props.setStatus(value || undefined);
+          } else if (value) {
+            props.setStatus(value);
+          }
+        }}
       >
-        <MenuItem>-</MenuItem>
+        {props.clearable && <MenuItem value="">-</MenuItem>}
         {statusOptions.map((s) => (
-          <MenuItem value={s}>{s.toLowerCase()}</MenuItem>
+          <MenuItem key={s} value={s}>
+            {s.toLowerCase()}
+          </MenuItem>
         ))}
       </Select>
     </FormControl>

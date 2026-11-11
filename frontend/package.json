@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test:ts": "tsc -b",
     "generate:api:notifications": "openapi-ts -f src/services/apis/openapi-ts.config.ts"
   },
   "dependencies": {
