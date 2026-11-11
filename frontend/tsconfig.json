@@ -4,11 +4,4 @@
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
   ],
-  "compilerOptions":{
-     "paths":{
-      "@apis": ["./src/services/apis"],
-      "@apis/*": ["./src/services/apis/*"],
-      "@componsnts": ["./src/componsnts"],
-    },
-  }
 }

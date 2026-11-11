@@ -1,4 +1,4 @@
-import { ThemeProvider } from "@mui/material";
+import { CssBaseline, Grid, ThemeProvider } from "@mui/material";
 import type { ReactNode } from "react";
 import { createTheme } from "@mui/material/styles";
 import "./theme.css";
@@ -7,12 +7,13 @@ import { Footer } from "./footer";
 
 const theme = createTheme({
   cssVariables: true,
-  defaultColorScheme: "light",
-  colorSchemes: { light: true, dark: true },
-  palette: {
-    mode: "light",
-    primary: { main: "#1976d2" },
-    secondary: { main: "#9c27b0" },
+  colorSchemes: {
+    light: {
+      palette: {
+        primary: { main: "#2C3033" },
+        secondary: { main: "#272127" },
+      },
+    },
   },
   typography: {
     fontFamily: "Roboto, Arial, sans-serif",
@@ -28,16 +29,16 @@ type ThemeProps = {
 export default function Theme({ children }: ThemeProps) {
   return (
     <ThemeProvider theme={theme}>
-      <div className="theme">
-        <div className="theme-header">
+      <CssBaseline />
+      <Grid className="theme">
+        <Grid className="theme-header">
           <Header />
-        </div>
-        <div className="theme-container">{children}</div>
-        <div className="theme-footer">
+        </Grid>
+        <Grid className="theme-container">{children}</Grid>
+        <Grid className="theme-footer">
           <Footer />
-        </div>
-      </div>
-      {children}
+        </Grid>
+      </Grid>
     </ThemeProvider>
   );
 }
