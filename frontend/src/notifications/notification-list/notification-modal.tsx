@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { isoToLocalDateTime } from "@utils";
-import StatusInput from "@notifications/notifications-toolbar/status-input";
+import { useNotifications } from "@notifications/notifications-service";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -42,26 +42,31 @@ type NotificationModal = {
 export default function NotificationModal({ id, onClose }: NotificationModal) {
   const [detail, setDetail] = useState<Notification | undefined>(undefined);
   const [alert, setAlert] = useState<AlertProps>();
+  const { onUpdateNotification } = useNotifications();
   const onCloseModal = () => {
     onClose();
     setDetail(undefined);
   };
   const onUpdateStatus = useCallback(async () => {
-    if (!detail) {
+    if (!detail || !detail.resolutionNote || detail.status === "RESOLVED") {
       return;
     }
+    //[Todo] Better handling
+    const newStatus: Notification["status"] =
+      detail.status === "OPEN" ? "IN_PROGRESS" : "RESOLVED";
     const { data, error } = await updateNotificationStatus({
       path: { id: detail.id },
-      body: { status: detail?.status, resolutionNote: detail?.resolutionNote },
+      body: { status: newStatus, resolutionNote: detail?.resolutionNote },
     });
     // [Todo] Define better validations for both status process and resolutionNote
-    setAlert({ severity: "success", children: "Successfully updated" });
     if (error) {
       setAlert({ severity: "error", children: String(error.message) });
       return;
     }
+    setAlert({ severity: "success", children: "Successfully updated" });
+    onUpdateNotification(data);
     setDetail(data);
-  }, [detail]);
+  }, [detail, onUpdateNotification]);
   useEffect(() => {
     getNotification({ path: { id } })
       .then((r) => {
@@ -115,11 +120,9 @@ export default function NotificationModal({ id, onClose }: NotificationModal) {
                 <Field label="ID" value={detail.id} />
                 <Field label="Title" value={detail.title} />
                 <Grid container spacing={10}>
+                  {/* [Todo] Create a badge for status */}
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <StatusInput
-                      status={detail.status}
-                      setStatus={(status) => setDetail({ ...detail, status })}
-                    />
+                    <Field label="Status" value={detail.status} />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Field label="Severity" value={detail.severity} />
@@ -184,21 +187,16 @@ export default function NotificationModal({ id, onClose }: NotificationModal) {
               justifyContent: "space-between",
             }}
           >
-            <Button
-              variant="outlined"
-              color="success"
-              onClick={() => onUpdateStatus()}
-            >
-              Update Status
-            </Button>
-            <Button
-              onClick={onCloseModal}
-              variant="outlined"
-              size="medium"
-              startIcon={<CloseIcon />}
-            >
-              Close
-            </Button>
+            {detail?.status && detail?.status !== "RESOLVED" && (
+              <Button
+                disabled={!detail.resolutionNote}
+                variant="outlined"
+                color="success"
+                onClick={() => onUpdateStatus()}
+              >
+                Update Status
+              </Button>
+            )}
           </Grid>
 
           {alert && <Alert {...alert} onClick={() => setAlert(undefined)} />}

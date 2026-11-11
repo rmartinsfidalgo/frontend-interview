@@ -33,6 +33,12 @@ export default function NotificationProvider({
     undefined,
   );
 
+  const onUpdateNotification = useCallback((notification: Notification) => {
+    setNotifications((prev) =>
+      prev?.map((n) => (n.id === notification.id ? notification : n)),
+    );
+  }, []);
+
   const isFetchingRef = useRef(false);
 
   const onRequestNextPage = useCallback(async () => {
@@ -54,6 +60,8 @@ export default function NotificationProvider({
   }, [metadata, severity, status]);
 
   useEffect(() => {
+    // Set to true in cleanup so a stale response (from previous filters) is ignored
+    let ignore = false;
     const initNotifications = async (
       updatedSeverity: NotificationSeverity | undefined,
       updatedStatus: NotificationStatus | undefined,
@@ -65,6 +73,7 @@ export default function NotificationProvider({
       const response = await listNotifications({
         query: { severity: updatedSeverity, status: updatedStatus },
       });
+      if (ignore) return;
       if (response.data) {
         // Set New States
         const { content, ...meta } = response.data;
@@ -76,6 +85,9 @@ export default function NotificationProvider({
       }
     };
     initNotifications(severity, status);
+    return () => {
+      ignore = true;
+    };
   }, [severity, status]);
 
   return (
@@ -90,6 +102,7 @@ export default function NotificationProvider({
         metadata,
         setMetadata,
         onRequestNextPage,
+        onUpdateNotification,
       }}
     >
       {children}
