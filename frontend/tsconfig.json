@@ -8,6 +8,7 @@
      "paths":{
       "@apis": ["./src/services/apis"],
       "@apis/*": ["./src/services/apis/*"],
+      "@componsnts": ["./src/componsnts"],
     },
   }
 }
