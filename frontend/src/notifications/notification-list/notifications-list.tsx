@@ -18,7 +18,7 @@ export default function NotificationList() {
 
   const virtuosoRef = useRef<TableVirtuosoHandle>(null);
   const [atTop, setAtTop] = useState(true);
-  const { firstItemIndex, newAboveCount } = usePrependAnchor(
+  const { firstItemIndex, newAboveCount, listKey } = usePrependAnchor(
     notifications,
     atTop,
   );
@@ -44,10 +44,12 @@ export default function NotificationList() {
         />
       )}
       <TableVirtuoso
+        key={listKey}
         ref={virtuosoRef}
         data={notifications}
         firstItemIndex={firstItemIndex}
-        computeItemKey={(_, row) => row.id}
+        // `row` can briefly be undefined while Virtuoso reconciles a shorter list
+        computeItemKey={(index, row) => row?.id ?? index}
         atTopStateChange={setAtTop}
         atTopThreshold={50}
         endReached={onRequestNextPage}
