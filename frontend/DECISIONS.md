@@ -27,7 +27,7 @@ The notifications list, filters and pagination metadata live in a single `Notifi
 I used MUI directly to save time on layout, theming, tables, chips and modals, and to get reasonable accessibility defaults. In a product with its own design system I would wrap these in project-level components instead of using MUI everywhere.
 
 ### Virtualised list: `react-virtuoso`
-*[Needs more investigations] It's First time I use it.* 
+**[Needs more investigations] It's First time I use it.** 
 
 The list can grow large and updates continuously. I chose `react-virtuoso` over `react-window` because it handles variable row heights, table layout (`TableVirtuoso`), "end reached" pagination and **prepending items without losing scroll position** out of the box.
 
@@ -56,6 +56,9 @@ The `totalElements` from the server is adjusted live: `+1` when a matching notif
 ### Infinite scroll
 Since we have a real time service. using pagination with page number is not sensible because we update the list from top and button and using pagination is not acure because if the list update the order of pagination will change.
 
+### CSS or MUI styling
+I generally prefer plain CSS with the [BEM methodology](https://bem.info/en/methodology/css/): it keeps styling separate from component logic, and static CSS is parsed and cached by the browser, whereas MUI's `sx`/`styled` generates styles in JavaScript at runtime. For this task I mostly used MUI styling to save time, but I kept a few CSS files (e.g. `header.css`, `theme.css`) to show both approaches.
+
 ---
 
 ## What's next
@@ -65,9 +68,12 @@ Since we have a real time service. using pagination with page number is not sens
 - **Table improvements:** sorting (e.g. by severity or date), an accessible action button (`IconButton` with `aria-label`) instead of a clickable cell, and empty/loading states.
 - **Configuration:** add a `.env` file to configure the backend endpoints instead of hardcoding `http://localhost:8080`.
 - **Error handling:** show an error state with retry when the initial fetch fails (it currently throws), and show the operator when the live connection is lost.
-- **"At a glance" summary:** a summary bar with counts by severity and status (e.g. "3 critical open").
-- **Resolution note:** only require it when resolving; the backend doesn't require it for `OPEN → IN_PROGRESS`.
-- **Tests:** implement the testing approach described above.
+- **Test Coverage** Cover more tests in the project.
+- **Docker** Dockerize the project.
+- **Pre-commit** Add pre-commit hooks to test app before creating PR
+- **CI/CD** Setup CI/CD for test and publish the application
+- **Minify | Tree Shaking | Dynamic import** Split code using dynamic import and tree shaking to have smaller bundle sizes.
+
 
 
 

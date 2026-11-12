@@ -34,6 +34,10 @@ pnpm run dev    # Default: http://localhost:5173/
 | `pnpm run build` | Type-check and build for production |
 | `pnpm run preview` | Serve the production build locally |
 | `pnpm run lint` | Run ESLint |
-| `pnpm run test:ts` | Type-check the project |
+| `pnpm run typecheck` | Type-check the project |
+| `pnpm test` | Run the tests in watch mode |
+| `pnpm run test:run` | Run the tests once (e.g. for CI) |
+| `pnpm run test:watch` | Run the tests in watch mode |
+| `pnpm run test:coverage` | Run the tests once with a coverage report |
 | `pnpm run generate:api:notifications` | Regenerate the API client and types from the backend OpenAPI schema |
 
