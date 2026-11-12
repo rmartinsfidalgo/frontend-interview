@@ -1,13 +1,8 @@
-import type { NotificationSeverity } from "@apis";
+import { NotificationSeverity } from "@apis";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import { useNotifications } from "@notifications/notifications-service";
 
-const severityOptions: NotificationSeverity[] = [
-  "CRITICAL",
-  "HIGH",
-  "MEDIUM",
-  "LOW",
-];
+const severityOptions = Object.values(NotificationSeverity);
 
 export default function SeverityInput() {
   const { severity, setSeveriity } = useNotifications();

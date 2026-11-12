@@ -1,7 +1,7 @@
-import type { NotificationStatus } from "@apis";
+import { NotificationStatus } from "@apis";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 
-const statusOptions: NotificationStatus[] = ["IN_PROGRESS", "OPEN", "RESOLVED"];
+const statusOptions = Object.values(NotificationStatus);
 
 // `clearable` adds a "-" option that resets the value to `undefined` (used for filters).
 // Without it, a status must always be selected (e.g. editing a notification).

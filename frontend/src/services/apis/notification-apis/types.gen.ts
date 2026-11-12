@@ -7,9 +7,25 @@ export type ClientOptions = {
 /**
  * Transitions are one-way - OPEN → IN_PROGRESS → RESOLVED
  */
-export type NotificationStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+export const NotificationStatus = {
+    OPEN: 'OPEN',
+    IN_PROGRESS: 'IN_PROGRESS',
+    RESOLVED: 'RESOLVED'
+} as const;
 
-export type NotificationSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+/**
+ * Transitions are one-way - OPEN → IN_PROGRESS → RESOLVED
+ */
+export type NotificationStatus = typeof NotificationStatus[keyof typeof NotificationStatus];
+
+export const NotificationSeverity = {
+    LOW: 'LOW',
+    MEDIUM: 'MEDIUM',
+    HIGH: 'HIGH',
+    CRITICAL: 'CRITICAL'
+} as const;
+
+export type NotificationSeverity = typeof NotificationSeverity[keyof typeof NotificationSeverity];
 
 export type Notification = {
     id: string;
