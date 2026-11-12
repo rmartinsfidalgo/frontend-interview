@@ -42,23 +42,41 @@ export default function NotificationProvider({
     [severity, status],
   );
 
+  // Latest list, read by SSE handlers to decide whether the total should change
+  // (kept out of state updaters, which must stay pure — StrictMode runs them twice)
+  const notificationsRef = useRef(notifications);
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  });
+
+  const adjustTotal = useCallback((delta: number) => {
+    setMetadata((m) => m && { ...m, totalElements: m.totalElements + delta });
+  }, []);
+
   const onUpdateNotification = useCallback(
     (notification: Notification) => {
+      const wasInList = notificationsRef.current?.some(
+        (n) => n.id === notification.id,
+      );
+      const stillMatches = matchesFilters(notification);
       setNotifications((prev) =>
         prev
           ?.map((n) => (n.id === notification.id ? notification : n))
-          .filter((n) => n.id !== notification.id || matchesFilters(n)),
+          .filter((n) => n.id !== notification.id || stillMatches),
       );
+      if (wasInList && !stillMatches) adjustTotal(-1);
     },
-    [matchesFilters],
+    [matchesFilters, adjustTotal],
   );
 
   useNotificationsStream({
     onCreated: (n) => {
-      if (!matchesFilters(n)) return;
-      setNotifications((prev) =>
-        prev && !prev.some((x) => x.id === n.id) ? [n, ...prev] : prev,
-      );
+      const list = notificationsRef.current;
+      if (!list || !matchesFilters(n) || list.some((x) => x.id === n.id)) {
+        return;
+      }
+      setNotifications((prev) => (prev ? [n, ...prev] : prev));
+      adjustTotal(1);
     },
     onUpdated: onUpdateNotification,
     onReconnect: () => setReloadKey((k) => k + 1),
