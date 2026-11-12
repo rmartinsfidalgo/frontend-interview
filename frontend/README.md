@@ -1,75 +1,39 @@
-# React + TypeScript + Vite
+# Notification Service
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project implements a notification board that integrates with a backend service to retrieve notification history and receive real-time updates.
 
-Currently, two official plugins are available:
+The app uses REST API endpoints to:
+- Retrieve the list of notifications.
+- Fetch an individual notification's details.
+- Update a notification's status.
+- Create a new notification (out of scope for this task).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+For details about the available API endpoints and their usage, refer to the backend service documentation at `http://localhost:8080/docs`.
 
-## React Compiler
+Additionally, the app uses **Server-Sent Events (SSE)** to receive real-time events, including `notification_created` and `notification_updated`. These events automatically update the notification list and individual notification statuses, keeping the displayed information in sync with the backend without manual refreshes.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Developer guide
+### Run the project in dev mode
+The backend service must be running first. You can check that it's up at `http://localhost:8080/docs`.
 
-## Expanding the ESLint configuration
+```bash
+# 1. Start the backend (from the repository root)
+cd ./mock-backend
+pnpm install
+pnpm start      # http://localhost:8080
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+# 2. Start the frontend (in a second terminal, from the repository root)
+cd ./frontend
+pnpm install    # Make sure packages are installed
+pnpm run dev    # Default: http://localhost:5173/
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+### Other scripts
+| Command | Description |
+|---|---|
+| `pnpm run build` | Type-check and build for production |
+| `pnpm run preview` | Serve the production build locally |
+| `pnpm run lint` | Run ESLint |
+| `pnpm run test:ts` | Type-check the project |
+| `pnpm run generate:api:notifications` | Regenerate the API client and types from the backend OpenAPI schema |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
