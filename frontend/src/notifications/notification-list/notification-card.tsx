@@ -48,7 +48,7 @@ export default function NotificationCard({
         onClick={() => onSelectNotification(notification.id)}
       >
         <ArrowForwardIcon
-          fontSize="large"
+          fontSize="medium"
           sx={{ borderRadius: 1, border: 1 }}
         />
       </TableCell>

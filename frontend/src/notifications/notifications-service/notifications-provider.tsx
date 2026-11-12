@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import NotificationsContext from "./notifications-context";
+import useNotificationsStream from "./use-notifications-stream";
 import {
   listNotifications,
   type ListNotificationsResponse,
@@ -33,17 +34,41 @@ export default function NotificationProvider({
     undefined,
   );
 
-  const onUpdateNotification = useCallback((notification: Notification) => {
-    setNotifications((prev) =>
-      prev?.map((n) => (n.id === notification.id ? notification : n)),
-    );
-  }, []);
+  const [reloadKey, setReloadKey] = useState(0);
+  const matchesFilters = useCallback(
+    (n: Notification) =>
+      (!severity || n.severity === severity) &&
+      (!status || n.status === status),
+    [severity, status],
+  );
+
+  const onUpdateNotification = useCallback(
+    (notification: Notification) => {
+      setNotifications((prev) =>
+        prev
+          ?.map((n) => (n.id === notification.id ? notification : n))
+          .filter((n) => n.id !== notification.id || matchesFilters(n)),
+      );
+    },
+    [matchesFilters],
+  );
+
+  useNotificationsStream({
+    onCreated: (n) => {
+      if (!matchesFilters(n)) return;
+      setNotifications((prev) =>
+        prev && !prev.some((x) => x.id === n.id) ? [n, ...prev] : prev,
+      );
+    },
+    onUpdated: onUpdateNotification,
+    onReconnect: () => setReloadKey((k) => k + 1),
+  });
 
   const isFetchingRef = useRef(false);
 
   const onRequestNextPage = useCallback(async () => {
     if (!metadata || isFetchingRef.current) return;
-    if (metadata.page + 1 >= metadata.totalPages) return; // no more pages
+    if (metadata.page + 1 >= metadata.totalPages) return;
     isFetchingRef.current = true;
     try {
       const response = await listNotifications({
@@ -52,7 +77,14 @@ export default function NotificationProvider({
       if (response.data) {
         const { content, ...meta } = response.data;
         setMetadata(meta);
-        setNotifications((prev) => [...(prev ?? []), ...content]);
+
+        setNotifications((prev) => {
+          const existing = new Set((prev ?? []).map((n) => n.id));
+          return [
+            ...(prev ?? []),
+            ...content.filter((n) => !existing.has(n.id)),
+          ];
+        });
       }
     } finally {
       isFetchingRef.current = false;
@@ -60,7 +92,6 @@ export default function NotificationProvider({
   }, [metadata, severity, status]);
 
   useEffect(() => {
-    // Set to true in cleanup so a stale response (from previous filters) is ignored
     let ignore = false;
     const initNotifications = async (
       updatedSeverity: NotificationSeverity | undefined,
@@ -88,7 +119,7 @@ export default function NotificationProvider({
     return () => {
       ignore = true;
     };
-  }, [severity, status]);
+  }, [severity, status, reloadKey]);
 
   return (
     <NotificationsContext.Provider
@@ -102,7 +133,6 @@ export default function NotificationProvider({
         metadata,
         setMetadata,
         onRequestNextPage,
-        onUpdateNotification,
       }}
     >
       {children}

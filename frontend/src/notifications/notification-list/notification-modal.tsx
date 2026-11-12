@@ -20,7 +20,6 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { isoToLocalDateTime } from "@utils";
-import { useNotifications } from "@notifications/notifications-service";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -42,7 +41,6 @@ type NotificationModal = {
 export default function NotificationModal({ id, onClose }: NotificationModal) {
   const [detail, setDetail] = useState<Notification | undefined>(undefined);
   const [alert, setAlert] = useState<AlertProps>();
-  const { onUpdateNotification } = useNotifications();
   const onCloseModal = () => {
     onClose();
     setDetail(undefined);
@@ -64,9 +62,9 @@ export default function NotificationModal({ id, onClose }: NotificationModal) {
       return;
     }
     setAlert({ severity: "success", children: "Successfully updated" });
-    onUpdateNotification(data);
+    // The list is updated via the SSE `notification_updated` event
     setDetail(data);
-  }, [detail, onUpdateNotification]);
+  }, [detail]);
   useEffect(() => {
     getNotification({ path: { id } })
       .then((r) => {

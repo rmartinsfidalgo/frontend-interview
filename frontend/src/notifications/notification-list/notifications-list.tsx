@@ -31,7 +31,10 @@ export default function NotificationList() {
             <TableCell>Severity</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Date</TableCell>
-            <TableCell>Action</TableCell>
+            {/* Fixed table layout sizes columns from this header row; others share the rest */}
+            <TableCell sx={{ width: 80 }} align="center">
+              Action
+            </TableCell>
           </TableRow>
         )}
         itemContent={(_, row) => (

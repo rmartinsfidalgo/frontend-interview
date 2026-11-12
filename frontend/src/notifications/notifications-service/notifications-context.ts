@@ -12,7 +12,6 @@ type NotificationsContextType ={
     metadata: MetadataType|undefined,
     setMetadata: (metadata:MetadataType)=>void,
     onRequestNextPage: ()=>void
-    onUpdateNotification: (notification:Notification)=>void;
 }
 
 const NotificationsContext = createContext<NotificationsContextType|null>(null);
